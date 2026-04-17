@@ -1,5 +1,5 @@
 [versions]
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.2"
 # Use -beta[.number] for pre-releases
 detektIJ = "2.4.3"
 assertj = "3.27.6"
@@ -9,12 +9,12 @@ junit4 = "4.13.2"
 slfApi = "2.0.17"
 
 [libraries]
-detekt-core = { group = "io.gitlab.arturbosch.detekt", name = "detekt-core", version.ref = "detekt" }
-detekt-api = { group = "io.gitlab.arturbosch.detekt", name = "detekt-api", version.ref = "detekt" }
-detekt-rules = { group = "io.gitlab.arturbosch.detekt", name = "detekt-rules", version.ref = "detekt" }
-detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
-detekt-tooling = { group = "io.gitlab.arturbosch.detekt", name = "detekt-tooling", version.ref = "detekt" }
-detekt-testUtils = { group = "io.gitlab.arturbosch.detekt", name = "detekt-test-utils", version.ref = "detekt" }
+detekt-core = { group = "dev.detekt", name = "detekt-core", version.ref = "detekt" }
+detekt-api = { group = "dev.detekt", name = "detekt-api", version.ref = "detekt" }
+detekt-rules = { group = "dev.detekt", name = "detekt-rules", version.ref = "detekt" }
+detekt-ktlintWrapper = { group = "dev.detekt", name = "detekt-rules-ktlint-wrapper", version.ref = "detekt" }
+detekt-tooling = { group = "dev.detekt", name = "detekt-tooling", version.ref = "detekt" }
+detekt-testUtils = { group = "dev.detekt", name = "detekt-test-utils", version.ref = "detekt" }
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit5" }
 junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit5Platform" }
@@ -22,7 +22,7 @@ junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
 slf4j-Api = { module = "org.slf4j:slf4j-api",  version.ref = "slfApi"}
 
 [plugins]
-kotlin-jvm = "org.jetbrains.kotlin.jvm:2.3.0"
+kotlin-jvm = "org.jetbrains.kotlin.jvm:2.3.20"
 versions = "com.github.ben-manes.versions:0.53.0"
-intellijPlatform = "org.jetbrains.intellij.platform:2.10.5"
+intellijPlatform = "org.jetbrains.intellij.platform:2.13.1"
 github-release = "com.github.breadmoirai.github-release:2.5.2"

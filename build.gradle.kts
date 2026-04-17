@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
@@ -30,7 +31,7 @@ dependencies {
 
     runtimeOnly(libs.detekt.core)
     runtimeOnly(libs.detekt.rules)
-    runtimeOnly(libs.detekt.formatting)
+    runtimeOnly(libs.detekt.ktlintWrapper)
 
     testImplementation(libs.detekt.testUtils)
     testImplementation(libs.assertj.core)
@@ -40,7 +41,7 @@ dependencies {
     testRuntimeOnly(libs.junit4)
 
     intellijPlatform {
-        intellijIdeaCommunity("2022.3")
+        intellijIdea("2026.1")
 
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.intelliLang")
@@ -52,8 +53,23 @@ dependencies {
     }
 }
 
+listOf(
+    configurations.compileClasspath,
+    configurations.runtimeClasspath,
+    configurations.testCompileClasspath,
+    configurations.testRuntimeClasspath,
+).forEach {
+    it.configure {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-bom")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test-jvm")
+    }
+}
+
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 tasks.withType<Test>().configureEach {
@@ -80,6 +96,7 @@ intellijPlatform {
         name.set("Detekt IntelliJ Plugin")
 
         ideaVersion {
+            sinceBuild = "261"
             untilBuild = provider { null }
         }
     }
@@ -112,4 +129,19 @@ githubRelease {
 
 tasks.githubRelease.configure {
     dependsOn(tasks.buildPlugin)
+}
+
+tasks.prepareSandbox {
+    sandboxDirectory = project.layout.projectDirectory.dir(".sandbox")
+}
+
+tasks.runIde {
+    jvmArgumentProviders +=
+        CommandLineArgumentProvider {
+            listOf(
+                "--add-opens",
+                "java.base/java.lang=ALL-UNNAMED",
+                "-XX:+UnlockDiagnosticVMOptions",
+            )
+        }
 }
