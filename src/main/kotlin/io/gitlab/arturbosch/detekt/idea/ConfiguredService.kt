@@ -8,12 +8,11 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.psi.PsiFile
-import io.github.detekt.tooling.api.DetektProvider
-import io.github.detekt.tooling.api.UnexpectedError
-import io.github.detekt.tooling.api.spec.ProcessingSpec
-import io.github.detekt.tooling.api.spec.RulesSpec
-import io.gitlab.arturbosch.detekt.api.Finding
-import io.gitlab.arturbosch.detekt.api.UnstableApi
+import dev.detekt.api.Issue
+import dev.detekt.tooling.api.DetektProvider
+import dev.detekt.tooling.api.UnexpectedError
+import dev.detekt.tooling.api.spec.ProcessingSpec
+import dev.detekt.tooling.api.spec.RulesSpec
 import io.gitlab.arturbosch.detekt.idea.config.DetektPluginSettings
 import io.gitlab.arturbosch.detekt.idea.util.DirectExecutor
 import io.gitlab.arturbosch.detekt.idea.util.PluginUtils
@@ -24,7 +23,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
+import kotlin.io.path.name
+import kotlin.io.path.writeText
 
 class ConfiguredService(private val project: Project) {
 
@@ -52,15 +54,17 @@ class ConfiguredService(private val project: Project) {
         return messages
     }
 
-    private fun settings(filename: String, autoCorrect: Boolean) = ProcessingSpec {
+    private fun settings(inputPath: Path, autoCorrect: Boolean) = ProcessingSpec {
         project {
             basePath = project.guessProjectDir()?.canonicalPath?.let { Paths.get(it) }
-            inputPaths = listOf(Paths.get(filename))
+                ?: inputPath.parent
+                ?: inputPath
+            inputPaths = listOf(inputPath)
         }
         rules {
             this.autoCorrect = autoCorrect
             activateAllRules = settings.enableAllRules
-            maxIssuePolicy = RulesSpec.MaxIssuePolicy.AllowAny
+            failurePolicy = RulesSpec.FailurePolicy.NeverFail
         }
         config {
             // Do not throw an error during annotation mode as it is a common scenario
@@ -110,7 +114,7 @@ class ConfiguredService(private val project: Project) {
 
     private fun baseline(): Path? = absoluteBaselinePath(project, settings)
 
-    fun execute(file: PsiFile, autoCorrect: Boolean): List<Finding> {
+    fun execute(file: PsiFile, autoCorrect: Boolean): List<Issue> {
         val pathToAnalyze = file.virtualFile
             ?.canonicalPath
             ?: return emptyList()
@@ -134,26 +138,43 @@ class ConfiguredService(private val project: Project) {
         logger.error(message, error)
     }
 
-    @OptIn(UnstableApi::class)
-    fun execute(fileContent: String, filename: String, autoCorrect: Boolean): List<Finding> {
+    fun execute(fileContent: String, filename: String, autoCorrect: Boolean): List<Issue> {
         if (filename in SPECIAL_FILES_TO_IGNORE) {
             return emptyList()
         }
 
-        val spec: ProcessingSpec = settings(filename, autoCorrect)
-        val detekt = DetektProvider.load(PluginUtils::class.java.classLoader).get(spec)
-        val result = if (autoCorrect) {
-            runWriteAction { detekt.run(fileContent, filename) }
-        } else {
-            detekt.run(fileContent, filename)
-        }
+        val inputPath = if (autoCorrect) Paths.get(filename) else writeTempInput(fileContent, filename)
+        try {
+            val result = if (autoCorrect) {
+                runWriteAction { runDetekt(inputPath, autoCorrect) }
+            } else {
+                runDetekt(inputPath, autoCorrect)
+            }
 
-        when (val error = result.error) {
-            is UnexpectedError -> throw error.cause
-            null -> Unit
-            else -> throw error
-        }
+            when (val error = result.error) {
+                is UnexpectedError -> throw error.cause
+                null -> Unit
+                else -> throw error
+            }
 
-        return result.container?.findings?.flatMap { it.value } ?: emptyList()
+            return result.container?.issues ?: emptyList()
+        } finally {
+            if (!autoCorrect) {
+                inputPath.deleteIfExists()
+                inputPath.parent?.deleteIfExists()
+            }
+        }
+    }
+
+    private fun runDetekt(inputPath: Path, autoCorrect: Boolean) =
+        DetektProvider.load(PluginUtils::class.java.classLoader)
+            .get(settings(inputPath, autoCorrect))
+            .run()
+
+    private fun writeTempInput(fileContent: String, filename: String): Path {
+        val tempDirectory = Files.createTempDirectory("detekt-intellij-plugin")
+        val tempInput = tempDirectory.resolve(Paths.get(filename).name)
+        tempInput.writeText(fileContent)
+        return tempInput
     }
 }

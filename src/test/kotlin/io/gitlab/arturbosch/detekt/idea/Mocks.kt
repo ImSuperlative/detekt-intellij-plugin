@@ -6,7 +6,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.fileTypes.FileTypeRegistry
-import com.intellij.openapi.fileTypes.MockFileTypeManager
+import com.intellij.openapi.fileTypes.PlainTextFileType
+import com.intellij.mock.MockFileTypeManager
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.PsiFileFactoryImpl
@@ -25,7 +26,7 @@ fun mockProject(): MockProject =
 fun heavyMockProject(rootDisposable: Disposable): MockProject = mockProject().apply {
     val env = CoreApplicationEnvironment(rootDisposable, true)
     val application = env.application
-    val typeManager = MockFileTypeManager()
+    val typeManager = MockFileTypeManager(PlainTextFileType.INSTANCE)
     application.registerService(FileTypeRegistry::class.java, typeManager)
     application.registerService(FileTypeManager::class.java, typeManager)
     ApplicationManager.setApplication(application, { FileTypeManager.getInstance() }, rootDisposable)

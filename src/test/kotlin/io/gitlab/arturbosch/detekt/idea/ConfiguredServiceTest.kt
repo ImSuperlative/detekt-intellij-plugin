@@ -1,7 +1,7 @@
 package io.gitlab.arturbosch.detekt.idea
 
 import com.intellij.openapi.components.service
-import io.github.detekt.test.utils.resourceAsPath
+import dev.detekt.test.utils.resourceAsPath
 import io.gitlab.arturbosch.detekt.idea.config.DetektPluginSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

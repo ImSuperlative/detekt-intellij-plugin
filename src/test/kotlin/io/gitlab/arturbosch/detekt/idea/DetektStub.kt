@@ -1,97 +1,63 @@
 package io.gitlab.arturbosch.detekt.idea
 
-import io.github.detekt.psi.FilePath
-import io.github.detekt.tooling.api.AnalysisResult
-import io.github.detekt.tooling.api.Detekt
-import io.github.detekt.tooling.api.DetektProvider
-import io.github.detekt.tooling.api.spec.ProcessingSpec
-import io.github.detekt.tooling.internal.DefaultAnalysisResult
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Detektion
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Finding
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Location
-import io.gitlab.arturbosch.detekt.api.Notification
-import io.gitlab.arturbosch.detekt.api.ProjectMetric
-import io.gitlab.arturbosch.detekt.api.RuleSetId
-import io.gitlab.arturbosch.detekt.api.Severity
-import io.gitlab.arturbosch.detekt.api.SourceLocation
-import io.gitlab.arturbosch.detekt.api.TextLocation
-import org.jetbrains.kotlin.com.intellij.openapi.util.Key
+import dev.detekt.api.Detektion
+import dev.detekt.api.Issue
+import dev.detekt.api.RuleInstance
+import dev.detekt.api.RuleSetId
+import dev.detekt.api.Severity
+import dev.detekt.api.SourceLocation
+import dev.detekt.api.TextLocation
+import dev.detekt.tooling.api.AnalysisResult
+import dev.detekt.tooling.api.Detekt
+import dev.detekt.tooling.api.DetektProvider
+import dev.detekt.tooling.api.spec.ProcessingSpec
+import dev.detekt.tooling.internal.DefaultAnalysisResult
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.resolve.BindingContext
-import java.nio.file.Path
-import java.nio.file.Paths
 
 class DetektProviderStub : DetektProvider {
 
     override val priority: Int = 1
 
-    override fun get(processingSpec: ProcessingSpec): Detekt = DetektStub()
+    override fun get(processingSpec: ProcessingSpec): Detekt = DetektStub(processingSpec)
 }
 
-class DetektStub : Detekt {
+class DetektStub(private val processingSpec: ProcessingSpec) : Detekt {
 
     override fun run(): AnalysisResult {
-        throw UnsupportedOperationException()
-    }
-
-    override fun run(path: Path): AnalysisResult {
-        throw UnsupportedOperationException()
-    }
-
-    override fun run(sourceCode: String, filename: String): AnalysisResult {
-        if (!filename.contains("Poko.kt")) {
+        val inputPath = processingSpec.projectSpec.inputPaths.single()
+        if (!inputPath.fileName.toString().contains("Poko.kt")) {
             throw UnsupportedOperationException("Only Poko.kt runs are supported.")
         }
-        return DefaultAnalysisResult(object : Detektion {
-            override val findings: Map<RuleSetId, List<Finding>> = mapOf(
-                "empty-blocks" to listOf(
-                    CodeSmell(
-                        Issue(
-                            "EmptyDefaultConstructor",
-                            Severity.Minor,
-                            "empty",
-                            Debt.FIVE_MINS
-                        ),
-                        Entity(
-                            "Poko",
-                            "testData.Poko.kt",
-                            Location(
-                                SourceLocation(3, 10),
-                                TextLocation(28, 30),
-                                FilePath(Paths.get(filename))
-                            )
-                        ),
-                        "empty constructor"
-                    )
-                )
-            )
-            override val metrics: Collection<ProjectMetric> = emptyList()
-            override val notifications: Collection<Notification> = emptyList()
 
-            override fun add(notification: Notification) {
-                // ignore
-            }
+        val rule = RuleInstance(
+            id = "EmptyDefaultConstructor",
+            ruleSetId = RuleSetId("empty-blocks"),
+            url = null,
+            description = "empty",
+            severity = Severity.Warning,
+            active = true,
+        )
+        val issue = Issue(
+            ruleInstance = rule,
+            entity = Issue.Entity(
+                signature = "Poko",
+                location = Issue.Location(
+                    source = SourceLocation(3, 10),
+                    endSource = SourceLocation(3, 12),
+                    text = TextLocation(28, 30),
+                    path = inputPath,
+                ),
+            ),
+            references = emptyList(),
+            message = "empty constructor",
+            severity = Severity.Warning,
+            suppressReasons = emptyList(),
+        )
 
-            override fun add(projectMetric: ProjectMetric) {
-                // ignore
-            }
-
-            override fun <V> addData(key: Key<V>, value: V) {
-                // ignore
-            }
-
-            override fun <V> getData(key: Key<V>): V? {
-                // ignore
-                return null
-            }
-        })
+        return DefaultAnalysisResult(Detektion(listOf(issue), listOf(rule)))
     }
 
-    override fun run(files: Collection<KtFile>, bindingContext: BindingContext): AnalysisResult {
+    override fun run(files: Collection<KtFile>): AnalysisResult {
         throw UnsupportedOperationException()
     }
 }

@@ -4,7 +4,7 @@ import com.intellij.openapi.util.Key
 
 const val DETEKT = "detekt"
 const val NOTIFICATION_GROUP_ID = DETEKT
-const val FORMATTING_RULE_SET_ID = "formatting"
+const val FORMATTING_RULE_SET_ID = "ktlint"
 
 const val SPECIAL_FILENAME_FOR_DEBUGGING = "/fragment.kt"
 const val SPECIAL_FILENAME_AI_SNIPPED = "/AIAssistantSnippet."

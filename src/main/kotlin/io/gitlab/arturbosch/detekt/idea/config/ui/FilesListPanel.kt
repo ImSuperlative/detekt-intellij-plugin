@@ -6,10 +6,9 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsContexts.DialogTitle
 import com.intellij.openapi.util.NlsContexts.Label
-import com.intellij.openapi.vcs.changes.ui.VirtualFileListCellRenderer
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBList
+import java.awt.GraphicsEnvironment
 import javax.swing.DefaultListModel
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
@@ -24,9 +23,8 @@ internal class FilesListPanel(
 ) {
 
     private val list = JBList(listModel).apply {
-        dragEnabled = true
+        dragEnabled = !GraphicsEnvironment.isHeadless()
         selectionModel.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
-        cellRenderer = VirtualFileListCellRenderer(project)
     }
 
     fun decorated(): JPanel =
@@ -51,27 +49,27 @@ internal class FilesListPanel(
 
         val files = FileChooser.chooseFiles(descriptor, list, project, null)
         for (file in files) {
-            if (file != null && !listModel.items.contains(file)) {
-                listModel += file
+            if (file != null && !listModel.items.contains(file.path)) {
+                listModel += file.path
             }
         }
     }
 
     @Suppress("TooManyFunctions") // Required functionality
-    class ListModel(initialItems: List<VirtualFile> = emptyList()) : DefaultListModel<VirtualFile>() {
+    class ListModel(initialItems: List<String> = emptyList()) : DefaultListModel<String>() {
 
-        val items: List<VirtualFile>
+        val items: List<String>
             get() = super.elements().toList()
 
         init {
             addAll(initialItems)
         }
 
-        operator fun plusAssign(newItem: VirtualFile) {
+        operator fun plusAssign(newItem: String) {
             addElement(newItem)
         }
 
-        operator fun plusAssign(newItems: Collection<VirtualFile>) {
+        operator fun plusAssign(newItems: Collection<String>) {
             addAll(newItems)
         }
 

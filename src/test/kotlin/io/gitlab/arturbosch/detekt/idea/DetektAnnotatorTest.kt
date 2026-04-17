@@ -1,8 +1,8 @@
 package io.gitlab.arturbosch.detekt.idea
 
 import com.intellij.openapi.components.service
-import io.github.detekt.test.utils.resourceAsPath
-import io.gitlab.arturbosch.detekt.api.Finding
+import dev.detekt.api.Issue
+import dev.detekt.test.utils.resourceAsPath
 import io.gitlab.arturbosch.detekt.idea.config.DetektPluginSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,7 +19,7 @@ class DetektAnnotatorTest : KotlinParsingTestCase() {
         assertThat(runAnnotator(enabled = true)).isNotEmpty
     }
 
-    private fun runAnnotator(enabled: Boolean): List<Finding> {
+    private fun runAnnotator(enabled: Boolean): List<Issue> {
         project.service<DetektPluginSettings>().enableDetekt = enabled
         val psi = parseFile(resourceAsPath("testData/Poko.kt"))
         return DetektAnnotator().doAnnotate(psi)

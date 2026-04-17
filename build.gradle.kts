@@ -65,11 +65,23 @@ listOf(
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test-jvm")
+
+        // detekt v2 pulls kotlin-compiler, which contains com.intellij.util.lang classes.
+        // Bundling those into an IntelliJ plugin/test runtime can shadow platform-loader
+        // classes and break PathClassLoader during VM bootstrap.
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-compiler")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-compiler-embeddable")
     }
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 tasks.withType<Test>().configureEach {

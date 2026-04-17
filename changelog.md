@@ -1,5 +1,11 @@
 ### Changelog
 
+#### 3.0.0
+
+- Based on detekt 2.0.0-alpha.2
+- Drop support for IntelliJ versions before 2026.1
+- Migrate plugin analysis, annotations, problems view and baseline integration to detekt v2 APIs
+
 #### 2.4.3
 
 - Based on detekt 1.23.8

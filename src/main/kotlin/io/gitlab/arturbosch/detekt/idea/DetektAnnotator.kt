@@ -6,10 +6,9 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.components.service
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
-import io.gitlab.arturbosch.detekt.api.CorrectableCodeSmell
-import io.gitlab.arturbosch.detekt.api.Finding
-import io.gitlab.arturbosch.detekt.api.SeverityLevel
-import io.gitlab.arturbosch.detekt.api.TextLocation
+import dev.detekt.api.Issue
+import dev.detekt.api.Severity
+import dev.detekt.api.TextLocation
 import io.gitlab.arturbosch.detekt.idea.config.DetektPluginSettings
 import io.gitlab.arturbosch.detekt.idea.intention.AddToBaselineAction
 import io.gitlab.arturbosch.detekt.idea.intention.AutoCorrectIntention
@@ -17,11 +16,11 @@ import io.gitlab.arturbosch.detekt.idea.util.isDetektEnabled
 import io.gitlab.arturbosch.detekt.idea.util.showNotification
 import org.jetbrains.kotlin.idea.KotlinLanguage
 
-class DetektAnnotator : ExternalAnnotator<PsiFile, List<Finding>>() {
+class DetektAnnotator : ExternalAnnotator<PsiFile, List<Issue>>() {
 
     override fun collectInformation(file: PsiFile): PsiFile = file
 
-    override fun doAnnotate(collectedInfo: PsiFile): List<Finding> {
+    override fun doAnnotate(collectedInfo: PsiFile): List<Issue> {
         if (
             !collectedInfo.project.isDetektEnabled() ||
             !isKotlinFile(collectedInfo)
@@ -46,13 +45,13 @@ class DetektAnnotator : ExternalAnnotator<PsiFile, List<Finding>>() {
 
     override fun apply(
         file: PsiFile,
-        annotationResult: List<Finding>,
+        annotationResult: List<Issue>,
         holder: AnnotationHolder,
     ) {
         val settings = file.project.service<DetektPluginSettings>()
         val hasCustomConfig = settings.configurationFilePaths.isNotEmpty()
         for (finding in annotationResult) {
-            val textRange = finding.charPosition.toTextRange()
+            val textRange = finding.location.text.toTextRange()
             val message = buildString {
                 append("detekt - ")
                 append(finding.id)
@@ -67,7 +66,7 @@ class DetektAnnotator : ExternalAnnotator<PsiFile, List<Finding>>() {
                 annotationBuilder.fileLevel()
             }
 
-            if (finding is CorrectableCodeSmell) {
+            if (finding.isAutoCorrectable) {
                 annotationBuilder.withFix(AutoCorrectIntention())
             } else {
                 annotationBuilder.withFix(AddToBaselineAction(finding))
@@ -77,7 +76,7 @@ class DetektAnnotator : ExternalAnnotator<PsiFile, List<Finding>>() {
         }
     }
 
-    private fun getSeverity(finding: Finding, hasCustomConfig: Boolean, treatAsError: Boolean): HighlightSeverity {
+    private fun getSeverity(finding: Issue, hasCustomConfig: Boolean, treatAsError: Boolean): HighlightSeverity {
         if (treatAsError) {
             return HighlightSeverity.ERROR
         }
@@ -87,9 +86,9 @@ class DetektAnnotator : ExternalAnnotator<PsiFile, List<Finding>>() {
         }
 
         return when (finding.severity) {
-            SeverityLevel.ERROR -> HighlightSeverity.ERROR
-            SeverityLevel.WARNING -> HighlightSeverity.WARNING
-            SeverityLevel.INFO -> HighlightSeverity.WEAK_WARNING
+            Severity.Error -> HighlightSeverity.ERROR
+            Severity.Warning -> HighlightSeverity.WARNING
+            Severity.Info -> HighlightSeverity.WEAK_WARNING
         }
     }
 

@@ -9,8 +9,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.newEditor.SettingsDialog
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.layout.ValidationInfoBuilder
 import io.gitlab.arturbosch.detekt.idea.DetektBundle
 import io.gitlab.arturbosch.detekt.idea.NOTIFICATION_GROUP_ID
@@ -38,16 +36,6 @@ fun absoluteBaselinePath(project: Project, settings: DetektPluginSettings): Path
     settings.baselinePath.trim()
         .takeIf { it.isNotEmpty() }
         ?.let { Path(absolutePath(project, settings.baselinePath)) }
-
-fun List<String>.toVirtualFilesList(): List<VirtualFile> {
-    val fs = LocalFileSystem.getInstance()
-    return filter { it.isNotBlank() }
-        .mapNotNull { fs.findFileByPath(it) }
-}
-
-fun List<VirtualFile>.toPathsList(): List<String> =
-    filter { it.exists() }
-        .map { it.path }
 
 fun showNotification(problems: List<String>, project: Project) {
     showNotification(

@@ -81,6 +81,14 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>3.0.0
+            <br>
+            <ul>
+                <li>Based on detekt 2.0.0-alpha.2</li>
+                <li>Drop support for IntelliJ versions before 2026.1</li>
+                <li>Migrate plugin analysis, annotations, problems view and baseline integration to detekt v2 APIs</li>
+            </ul>
+        </li>
         <li>2.4.3
             <br>
             <ul>

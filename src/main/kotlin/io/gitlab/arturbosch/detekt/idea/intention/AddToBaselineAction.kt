@@ -7,15 +7,18 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import io.github.detekt.tooling.api.BaselineProvider
-import io.gitlab.arturbosch.detekt.api.Finding
+import dev.detekt.api.Issue
+import dev.detekt.tooling.api.BaselineProvider
 import io.gitlab.arturbosch.detekt.idea.DETEKT
 import io.gitlab.arturbosch.detekt.idea.DetektBundle
 import io.gitlab.arturbosch.detekt.idea.config.DetektPluginSettings
+import io.gitlab.arturbosch.detekt.idea.baselineId
+import io.gitlab.arturbosch.detekt.idea.id
+import io.gitlab.arturbosch.detekt.idea.util.PluginUtils
 import io.gitlab.arturbosch.detekt.idea.util.absoluteBaselinePath
 import kotlin.io.path.exists
 
-class AddToBaselineAction(private val finding: Finding) : IntentionAction, LowPriorityAction {
+class AddToBaselineAction(private val finding: Issue) : IntentionAction, LowPriorityAction {
 
     override fun startInWriteAction(): Boolean = true
 
@@ -24,7 +27,7 @@ class AddToBaselineAction(private val finding: Finding) : IntentionAction, LowPr
     override fun getFamilyName(): String = DETEKT
 
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile): Boolean {
-        val id = finding.compactWithSignature()
+        val id = finding.baselineId
         return id.trim().isNotEmpty() && project.isBaselineDefinedAndValid()
     }
 
@@ -37,10 +40,10 @@ class AddToBaselineAction(private val finding: Finding) : IntentionAction, LowPr
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
         val settings = project.service<DetektPluginSettings>()
         val baselinePath = requireNotNull(absoluteBaselinePath(project, settings))
-        val provider = BaselineProvider.load()
+        val provider = BaselineProvider.load(PluginUtils::class.java.classLoader)
         val baseline = provider.read(baselinePath)
         val newBaseline = provider.of(
-            baseline.manuallySuppressedIssues + provider.id(finding),
+            baseline.manuallySuppressedIssues + finding.baselineId,
             baseline.currentIssues,
         )
         provider.write(baselinePath, newBaseline)
