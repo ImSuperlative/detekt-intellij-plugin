@@ -28,6 +28,9 @@ class DetektStub(private val processingSpec: ProcessingSpec) : Detekt {
         if (!inputPath.fileName.toString().contains("Poko.kt")) {
             throw UnsupportedOperationException("Only Poko.kt runs are supported.")
         }
+        if (processingSpec.projectSpec.basePath != inputPath.parent) {
+            throw UnsupportedOperationException("The analysis base path should contain the temporary input file.")
+        }
 
         val rule = RuleInstance(
             id = "EmptyDefaultConstructor",

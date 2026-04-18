@@ -1,10 +1,12 @@
 ### Changelog
 
-#### 3.0.0
+#### 3.0.1
 
 - Based on detekt 2.0.0-alpha.2
 - Drop support for IntelliJ versions before 2026.1
 - Migrate plugin analysis, annotations, problems view and baseline integration to detekt v2 APIs
+- Fix background analysis for synthetic diff and AI snippet editor buffers
+- Avoid VFS path resolution while building settings UI
 
 #### 2.4.3
 

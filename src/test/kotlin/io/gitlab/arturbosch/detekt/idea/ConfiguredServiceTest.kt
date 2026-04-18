@@ -69,10 +69,24 @@ class ConfiguredServiceTest : MockProjectTestCase() {
     }
 
     @Test
+    fun `synthetic root file path runs through temporary input`() {
+        val service = ConfiguredService(project)
+        val testPath = resourceAsPath("testData/Poko.kt")
+
+        assertThat(
+            service.execute(
+                testPath.readText(),
+                "/Poko.kt",
+                autoCorrect = false
+            )
+        ).isNotEmpty
+    }
+
+    @Test
     fun `special fragments are excluded from analysis`() {
         val service = ConfiguredService(project)
 
         assertThat(service.execute("", SPECIAL_FILENAME_FOR_DEBUGGING, false)).isEmpty()
-        assertThat(service.execute("", SPECIAL_FILENAME_AI_SNIPPED, false)).isEmpty()
+        assertThat(service.execute("", "${SPECIAL_FILENAME_AI_SNIPPED}kt", false)).isEmpty()
     }
 }

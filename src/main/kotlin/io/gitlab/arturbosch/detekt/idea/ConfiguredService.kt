@@ -56,9 +56,7 @@ class ConfiguredService(private val project: Project) {
 
     private fun settings(inputPath: Path, autoCorrect: Boolean) = ProcessingSpec {
         project {
-            basePath = project.guessProjectDir()?.canonicalPath?.let { Paths.get(it) }
-                ?: inputPath.parent
-                ?: inputPath
+            basePath = basePathFor(inputPath, autoCorrect)
             inputPaths = listOf(inputPath)
         }
         rules {
@@ -114,6 +112,15 @@ class ConfiguredService(private val project: Project) {
 
     private fun baseline(): Path? = absoluteBaselinePath(project, settings)
 
+    private fun basePathFor(inputPath: Path, autoCorrect: Boolean): Path =
+        if (autoCorrect) {
+            project.guessProjectDir()?.canonicalPath?.let { Paths.get(it) }
+                ?: inputPath.parent
+                ?: inputPath
+        } else {
+            inputPath.parent ?: inputPath
+        }
+
     fun execute(file: PsiFile, autoCorrect: Boolean): List<Issue> {
         val pathToAnalyze = file.virtualFile
             ?.canonicalPath
@@ -139,7 +146,7 @@ class ConfiguredService(private val project: Project) {
     }
 
     fun execute(fileContent: String, filename: String, autoCorrect: Boolean): List<Issue> {
-        if (filename in SPECIAL_FILES_TO_IGNORE) {
+        if (isSpecialFileToIgnore(filename)) {
             return emptyList()
         }
 
@@ -177,4 +184,8 @@ class ConfiguredService(private val project: Project) {
         tempInput.writeText(fileContent)
         return tempInput
     }
+
+    private fun isSpecialFileToIgnore(filename: String): Boolean =
+        filename == SPECIAL_FILENAME_FOR_DEBUGGING ||
+            filename.startsWith(SPECIAL_FILENAME_AI_SNIPPED)
 }
